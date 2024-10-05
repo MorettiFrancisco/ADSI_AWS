@@ -1,6 +1,7 @@
 import boto3
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from decimal import Decimal
 
 app = FastAPI()
 
@@ -12,11 +13,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
-
 
 @app.post("/load-bucket-file")
 async def load_bucket(name: str, file: UploadFile = File(...)):
@@ -26,7 +25,6 @@ async def load_bucket(name: str, file: UploadFile = File(...)):
     file_url = f"https://{bucket}.s3.amazonaws.com/{file.filename}"
     return {"message": f"Loaded file {file.filename}. file url: {file_url}"}
 
-
 @app.delete("/delete-bucket-file")
 async def delete_bucket_file(name: str):
     s3 = boto3.client("s3")
@@ -35,15 +33,15 @@ async def delete_bucket_file(name: str):
     return {"message": f"{response}"}
 
 @app.post("/load-dynamo")
-async def load_dynamo(dni_alumno: str, nombre_parcial: str, nota_parcial: float):
-    dynamodb = boto3.resource("dynamodb")
+async def load_dynamo(dni_alumno: str, nombre_parcial: str, nota_parcial: Decimal):
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
     table = dynamodb.Table("ADSI_Prueba")
     table.put_item(Item={"dni_alumno": dni_alumno, "nombre_parcial": nombre_parcial, "nota_parcial": nota_parcial})
     return {"message": f"Loaded parcial {dni_alumno} in table {table.name}"} 
 
 @app.get("/get-dynamo")
 async def get_dynamo(dni_alumno: str):
-    dynamodb = boto3.resource("dynamodb")
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
     table = dynamodb.Table("ADSI_Prueba")
     response = table.get_item(Key={"dni_alumno": dni_alumno})
     item = response.get("Item")
