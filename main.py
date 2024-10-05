@@ -34,38 +34,19 @@ async def delete_bucket_file(name: str):
     response = s3.delete_object(Bucket=bucket, Key=name)
     return {"message": f"{response}"}
 
-
 @app.post("/load-dynamo")
-async def load_dynamo(name: str, description: str, price: float):
+async def load_dynamo(dni_alumno: str, nombre_parcial: str, nota_parcial: float):
     dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("TABLE_NAME")
-    table.put_item(Item={"name": name, "description": description, "price": price})
-    return {"message": f"Loaded item {name} in table {table.name}"}
-
+    table = dynamodb.Table("ADSI_Prueba")
+    table.put_item(Item={"dni_alumno": dni_alumno, "nombre_parcial": nombre_parcial, "nota_parcial": nota_parcial})
+    return {"message": f"Loaded parcial {dni_alumno} in table {table.name}"} 
 
 @app.get("/get-dynamo")
-async def get_dynamo():
+async def get_dynamo(dni_alumno: str):
     dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("TABLE_NAME")
-    response = table.scan()
-    return response["Items"]
-
-
-@app.put("/update-dynamo")
-async def update_dynamo(name: str, price: float):
-    dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("TABLE_NAME")
-    table.update_item(
-        Key={"name": name},
-        UpdateExpression="set price = :p",
-        ExpressionAttributeValues={":p": price},
-    )
-    return {"message": f"Updated price of item {name} in table {table.name}"}
-
-
-@app.delete("/delete-dynamo")
-async def delete_dynamo(name: str):
-    dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("TABLE_NAME")
-    table.delete_item(Key={"name": name})
-    return {"message": f"Deleted item {name} in table {table.name}"}
+    table = dynamodb.Table("ADSI_Prueba")
+    response = table.get_item(Key={"dni_alumno": dni_alumno})
+    item = response.get("Item")
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
