@@ -63,10 +63,28 @@ async def get_dynamo(dni_alumno: str):
         raise HTTPException(status_code=404, detail="Item not found")
     return item
 
+@app.post("/create-rds-table")
+async def create_rds_table():
+    try:
+        await pgsql_conn.execute(
+            "CREATE TABLE alumnos (id SERIAL PRIMARY KEY, nombre VARCHAR(100), apellido VARCHAR(100))"
+        )
+        return {"status": "success"}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/load-rds")
 async def load_rds(name: str, surname: str):
     try:
         await pgsql_conn.execute("INSERT INTO alumnos (nombre, apellido) VALUES ($1, $2)", name, surname)
         return {"status": "success"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/get-rds")
+async def get_rds():
+    try:
+        rows = await pgsql_conn.fetch("SELECT * FROM alumnos")
+        return rows
     except Exception as e:
         return {"error": str(e)}
