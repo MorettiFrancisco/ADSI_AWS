@@ -33,3 +33,22 @@ async def load_dynamo(name: str, description: str, price: float):
     table = dynamodb.Table("TABLE_NAME")
     table.put_item(Item={"name": name, "description": description, "price": price})
     return {"message": f"Loaded item {name} in table {table.name}"}
+
+
+@app.get("/get-dynamo")
+async def get_dynamo():
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table("TABLE_NAME")
+    response = table.scan()
+    return response["Items"]
+
+@app.put("/update-dynamo")
+async def update_dynamo(name: str, price: float):
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table("TABLE_NAME")
+    table.update_item(
+        Key={"name": name},
+        UpdateExpression="set price = :p",
+        ExpressionAttributeValues={":p": price},
+    )
+    return {"message": f"Updated price of item {name} in table {table.name}"}
