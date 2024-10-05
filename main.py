@@ -52,3 +52,10 @@ async def update_dynamo(name: str, price: float):
         ExpressionAttributeValues={":p": price},
     )
     return {"message": f"Updated price of item {name} in table {table.name}"}
+
+@app.delete("/delete-dynamo")
+async def delete_dynamo(name: str):
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table("TABLE_NAME")
+    table.delete_item(Key={"name": name})
+    return {"message": f"Deleted item {name} in table {table.name}"}
