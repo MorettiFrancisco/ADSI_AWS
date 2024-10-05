@@ -18,13 +18,21 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.post("/load-bucket")
+@app.post("/load-bucket-file")
 async def load_bucket(name: str, file: UploadFile = File(...)):
     s3 = boto3.client("s3")
-    bucket = "BUCKET_NAME"
+    bucket = "adsi-bucket"
     s3.upload_fileobj(file.file, bucket, file.filename)
     file_url = f"https://{bucket}.s3.amazonaws.com/{file.filename}"
     return {"message": f"Loaded file {file.filename}. file url: {file_url}"}
+
+
+@app.delete("/delete-bucket-file")
+async def delete_bucket_file(name: str):
+    s3 = boto3.client("s3")
+    bucket = "adsi-bucket"
+    response = s3.delete_object(Bucket=bucket, Key=name)
+    return {"message": f"{response}"}
 
 
 @app.post("/load-dynamo")
@@ -42,6 +50,7 @@ async def get_dynamo():
     response = table.scan()
     return response["Items"]
 
+
 @app.put("/update-dynamo")
 async def update_dynamo(name: str, price: float):
     dynamodb = boto3.resource("dynamodb")
@@ -52,6 +61,7 @@ async def update_dynamo(name: str, price: float):
         ExpressionAttributeValues={":p": price},
     )
     return {"message": f"Updated price of item {name} in table {table.name}"}
+
 
 @app.delete("/delete-dynamo")
 async def delete_dynamo(name: str):
