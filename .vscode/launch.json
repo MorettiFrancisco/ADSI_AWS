@@ -9,6 +9,7 @@
             "type": "debugpy",
             "request": "launch",
             "module": "uvicorn",
+            "python": ".venv/Scripts/python.exe",
             "args": [
                 "main:app",
                 "--reload"

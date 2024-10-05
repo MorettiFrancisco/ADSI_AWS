@@ -23,7 +23,7 @@ async def root():
 async def startup():
     global pgsql_conn
     pgsql_conn = await asyncpg.connect(
-        database="database-1",
+        database="",
         user="postgres",
         password="trabajointegrador",
         host="database-1.c52oa2aa4of2.us-west-2.rds.amazonaws.com",
