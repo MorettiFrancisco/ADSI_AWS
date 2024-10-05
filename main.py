@@ -18,7 +18,6 @@ app.add_middleware(
 async def root():
     return {"message": "Hello World"}
 
-
 @app.on_event("startup")
 async def startup():
     global pgsql_conn
@@ -54,14 +53,18 @@ async def load_dynamo(dni_alumno: str, nombre_parcial: str, nota_parcial: Decima
     return {"message": f"Loaded parcial {dni_alumno} in table {table.name}"} 
 
 @app.get("/get-dynamo")
-async def get_dynamo(dni_alumno: str):
+async def get_dynamo():
     dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
     table = dynamodb.Table("ADSI_Prueba")
-    response = table.get_item(Key={"dni_alumno": dni_alumno})
-    item = response.get("Item")
-    if item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return item
+    response = table.scan()
+    return response["Items"]
+
+@app.delete("/delete-dynamo")
+async def delete_dynamo(dni_alumno: str, nombre_parcial: str):
+    dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+    table = dynamodb.Table("ADSI_Prueba")
+    response = table.delete_item(Key={"dni_alumno": dni_alumno, "nombre_parcial": nombre_parcial})
+    return {"message": f"{response}"}
 
 @app.post("/create-rds-table")
 async def create_rds_table():
