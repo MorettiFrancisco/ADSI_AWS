@@ -2,9 +2,10 @@ import boto3
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from decimal import Decimal
+import asyncpg
 
 app = FastAPI()
-
+pgsql_conn = None
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
@@ -16,6 +17,19 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+@app.on_event("startup")
+async def startup():
+    global pgsql_conn
+    pgsql_conn = await asyncpg.connect(
+        database="database-1",
+        user="postgres",
+        password="trabajointegrador",
+        host="database-1.c52oa2aa4of2.us-west-2.rds.amazonaws.com",
+        port="5432",
+    )
+
 
 @app.post("/load-bucket-file")
 async def load_bucket(name: str, file: UploadFile = File(...)):
@@ -48,3 +62,11 @@ async def get_dynamo(dni_alumno: str):
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
+
+@app.post("/load-rds")
+async def load_rds(name: str, surname: str):
+    try:
+        await pgsql_conn.execute("INSERT INTO alumnos (nombre, apellido) VALUES ($1, $2)", name, surname)
+        return {"status": "success"}
+    except Exception as e:
+        return {"error": str(e)}
