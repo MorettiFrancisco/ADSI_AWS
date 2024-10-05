@@ -18,8 +18,6 @@ async def root():
     return {"message": "Hello World"}
 
 
-
-# Crear la conexión al iniciar la aplicación
 @app.on_event("startup")
 async def startup():
     global pgsql_conn
@@ -32,47 +30,38 @@ async def startup():
     )
 
 
-@app.post("/load-bucket")
+@app.post("/load-bucket-file")
 async def load_bucket(name: str, file: UploadFile = File(...)):
     s3 = boto3.client("s3")
-    bucket = "BUCKET_NAME"
+    bucket = "adsi-bucket"
     s3.upload_fileobj(file.file, bucket, file.filename)
     file_url = f"https://{bucket}.s3.amazonaws.com/{file.filename}"
     return {"message": f"Loaded file {file.filename}. file url: {file_url}"}
 
 
-@app.post("/load-dynamo")
-async def load_dynamo(name: str, description: str, price: float):
-    dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("TABLE_NAME")
-    table.put_item(Item={"name": name, "description": description, "price": price})
-    return {"message": f"Loaded item {name} in table {table.name}"}
+@app.delete("/delete-bucket-file")
+async def delete_bucket_file(name: str):
+    s3 = boto3.client("s3")
+    bucket = "adsi-bucket"
+    response = s3.delete_object(Bucket=bucket, Key=name)
+    return {"message": f"{response}"}
 
+@app.post("/load-dynamo")
+async def load_dynamo(dni_alumno: str, nombre_parcial: str, nota_parcial: float):
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table("ADSI_Prueba")
+    table.put_item(Item={"dni_alumno": dni_alumno, "nombre_parcial": nombre_parcial, "nota_parcial": nota_parcial})
+    return {"message": f"Loaded parcial {dni_alumno} in table {table.name}"} 
 
 @app.get("/get-dynamo")
-async def get_dynamo():
+async def get_dynamo(dni_alumno: str):
     dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("TABLE_NAME")
-    response = table.scan()
-    return response["Items"]
-
-@app.put("/update-dynamo")
-async def update_dynamo(name: str, price: float):
-    dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("TABLE_NAME")
-    table.update_item(
-        Key={"name": name},
-        UpdateExpression="set price = :p",
-        ExpressionAttributeValues={":p": price},
-    )
-    return {"message": f"Updated price of item {name} in table {table.name}"}
-
-@app.delete("/delete-dynamo")
-async def delete_dynamo(name: str):
-    dynamodb = boto3.resource("dynamodb")
-    table = dynamodb.Table("TABLE_NAME")
-    table.delete_item(Key={"name": name})
-    return {"message": f"Deleted item {name} in table {table.name}"}
+    table = dynamodb.Table("ADSI_Prueba")
+    response = table.get_item(Key={"dni_alumno": dni_alumno})
+    item = response.get("Item")
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
 
 @app.post("/load-rds")
 async def load_rds(name: str, surname: str):
